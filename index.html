@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poppy Playtime Chapter 5 - Broken Things</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root { --red: #ff0000; --cyan: #00ffff; }
+        body, html { height: 100%; margin: 0; background: #000; font-family: 'Press Start 2P', cursive; color: white; overflow: hidden; }
+
+        /* TERMINAL START */
+        #gate {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; z-index: 10000; display: flex;
+            flex-direction: column; justify-content: center; align-items: center;
+            cursor: pointer; border: 10px solid #111;
+        }
+
+        /* BACKGROUNDS */
+        .bg {
+            background-image: url('image_c53efb.jpg'); background-size: cover; 
+            background-position: center; height: 115vh; width: 115vw; 
+            position: fixed; top: -7%; left: -7%; z-index: 1; filter: brightness(0.2);
+            transition: 1.5s ease;
+        }
+
+        .camera-static {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/b/b1/Static_noise.png');
+            opacity: 0.03; z-index: 5; pointer-events: none; mix-blend-mode: screen;
+        }
+
+        .strobe { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--red); z-index: 7; opacity: 0; pointer-events: none; mix-blend-mode: overlay; }
+
+        .container { position: relative; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; text-align: center; }
+        .timer { font-size: 4rem; text-shadow: 5px 5px 0px black; transition: 0.3s; }
+
+        /* HORROR PHASES */
+        body.m1 .header { opacity: 0; pointer-events: none; }
+        body.m1 .timer { font-size: 10rem; color: var(--red); }
+        body.m1 .camera-static { opacity: 0.2; animation: static-shake 0.1s infinite; }
+        
+        body.m10s .container { animation: shake 0.1s infinite; }
+        body.m10s .timer { font-size: 18rem; animation: glitch 0.2s infinite; }
+        body.m10s .strobe { animation: strobe-fx 0.4s infinite; }
+        body.m10s .bg { animation: heartbeat 0.6s infinite; }
+
+        @keyframes shake { 0% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } }
+        @keyframes static-shake { 0% { background-position: 0 0; } 100% { background-position: 100% 100%; } }
+        @keyframes strobe-fx { 0%, 100% { opacity: 0; } 50% { opacity: 0.5; } }
+        @keyframes heartbeat { 0%, 100% { transform: scale(1.1); } 50% { transform: scale(1.3); } }
+        @keyframes glitch { 0% { transform: skew(0deg); text-shadow: 6px 0 var(--cyan); } 50% { transform: skew(15deg); text-shadow: -6px 0 var(--red); } }
+    </style>
+</head>
+<body id="b">
+
+    <div id="gate" onclick="init()">
+        <div style="color: var(--red); font-size: 1.2rem;">TERMINAL STATUS: OFFLINE</div>
+        <div style="font-size: 0.6rem; margin-top: 20px; color: #444;">[ CLICK TO RESTORE POWER ]</div>
+    </div>
+
+    <div class="bg"></div>
+    <div class="camera-static"></div>
+    <div class="strobe"></div>
+
+    <div class="container">
+        <div id="h" class="header">
+            <div style="font-size: 1.2rem;">POPPY PLAYTIME: CHAPTER 5</div>
+            <div style="font-size: 0.7rem; color: var(--red); margin-top: 10px;">BROKEN THINGS</div>
+        </div>
+        <div id="t" class="timer">--:--:--</div>
+    </div>
+
+    <script>
+        const targetDate = new Date("Feb 18, 2026 17:00:00 GMT+0100").getTime();
+        let audioCtx, oscillator, gainNode;
+
+        function init() {
+            document.getElementById('gate').style.display = 'none';
+            startHorrorMusic();
+            setInterval(update, 1000);
+            update();
+        }
+
+        // We create a creepy synthesized music-box theme so it works for EVERYONE
+        function startHorrorMusic() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            gainNode = audioCtx.createGain();
+            gainNode.connect(audioCtx.destination);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
+            function playNote(freq, time) {
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.type = 'triangle'; // Creepy music box sound
+                osc.frequency.setValueAtTime(freq, time);
+                osc.connect(g);
+                g.connect(gainNode);
+                g.gain.setValueAtTime(0.1, time);
+                g.gain.exponentialRampToValueAtTime(0.0001, time + 1.5);
+                osc.start(time);
+                osc.stop(time + 1.5);
+            }
+
+            // Simple Poppy-style 3-note loop
+            setInterval(() => {
+                let now = audioCtx.currentTime;
+                playNote(440, now);
+                playNote(349, now + 0.5);
+                playNote(329, now + 1.0);
+            }, 2000);
+        }
+
+        function update() {
+            const now = new Date().getTime();
+            const d = targetDate - now;
+
+            if (d <= 0) {
+                document.getElementById('t').innerHTML = "<span style='color:red'>OUT NOW</span>";
+                return;
+            }
+
+            let s = Math.floor(d / 1000);
+            let m = Math.floor(s / 60);
+            let h = Math.floor(m / 60);
+            let day = Math.floor(h / 24);
+            s %= 60; m %= 60; h %= 24;
+
+            // Remove Zeros Logic
+            if (d > 60000) {
+                let parts = [];
+                if (day > 0) parts.push(day);
+                if (h > 0 || day > 0) parts.push(h.toString().padStart(2, '0'));
+                parts.push(m.toString().padStart(2, '0'));
+                parts.push(s.toString().padStart(2, '0'));
+                document.getElementById('t').innerText = parts.join(':');
+            } else {
+                document.getElementById('t').innerText = s; // Cinematic massive seconds
+            }
+
+            // Phases & Pitch Distortion
+            if (d <= 60000 && d > 10000) {
+                document.getElementById('b').className = "m1";
+                // We simulate music distortion by slowing down the interval if we used samples, 
+                // but here we just crank the visuals.
+            } else if (d <= 10000) {
+                document.getElementById('b').className = "m10s";
+            }
+        }
+    </script>
+</body>
+</html>
